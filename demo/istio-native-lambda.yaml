@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: testlambda
+  name: testlambda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testlambda
+  template:
+    metadata:
+      #      annotations:
+      #        sidecar.istio.io/inject: "false"
+      labels:
+        app: testlambda
+    spec:
+      containers:
+        - image: aerfio/testsrv-7f6cabcf405589baaaaa2261b4cb85a2@sha256:f772948e3a2cf1bdff0270d4b9d89c269d423e0cbb9b46cb6aa066a1feb614c4 # look at main.go
+          imagePullPolicy: Always
+          name: testlambda
+          resources:
+            requests:
+              cpu: 7m
+              memory: 40Mi
+            limits:
+              cpu: 9m
+              memory: 60Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: testlambda
+  name: lambdatest
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: testlambda
+---
+apiVersion: gateway.kyma-project.io/v1alpha1
+kind: APIRule
+metadata:
+  name: lambda-test
+spec:
+  gateway: kyma-gateway.kyma-system.svc.cluster.local
+  rules:
+    - accessStrategies:
+        - config: {}
+          handler: allow
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+      path: /.*
+  service:
+    host: lambda-test.tattered-welcome.wookiee.hudy.ninja
+    name: lambdatest
+    port: 8080
+---
+apiVersion: servicecatalog.kyma-project.io/v1alpha1
+kind: ServiceBindingUsage
+metadata:
+  name: sbu-test
+spec:
+  serviceBindingRef:
+    name: sbu-test
+  usedBy:
+    kind: deployment
+    name: testlambda
+  parameters:
+    envPrefix:
+      name: "REDIS_"

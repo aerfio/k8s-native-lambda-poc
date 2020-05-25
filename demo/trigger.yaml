@@ -1,0 +1,10 @@
+apiVersion: eventing.knative.dev/v1alpha1
+kind: Trigger
+metadata:
+  name: testsrv-trigger
+spec:
+  filter:
+    attributes:
+      type: dev.knative.foo.bar
+  subscriber:
+    uri: http://lambdatest.lambda-test.svc.cluster.local:8080
